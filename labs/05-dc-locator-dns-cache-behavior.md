@@ -37,7 +37,7 @@ Open **DNS Manager** and navigate to:
 
 You should see LDAP SRV records pointing to the domain controllers.
 
-![DNS SRV Records](../screenshots/lab05_dns_srv_records.png)
+![DNS SRV Records](../screenshots/lab05/lab05_dns_srv_records.png)
 
 These records tell clients: Which servers provide LDAP directory services
                             Which servers provide Kerberos authentication
@@ -56,7 +56,7 @@ _ldap._tcp.dc._msdcs.corp.local
 
 Example output:
 
-![SRV Query](../screenshots/lab05_srv_query.png)
+![SRV Query](../screenshots/lab05/lab05_srv_query.png)
 
 Results show both domain controllers: dc01.corp.local
                                       dc02.corp.local
