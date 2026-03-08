@@ -1,10 +1,16 @@
-# Lab 05 – DC Locator, SRV Records, and DNS Misconfiguration
+# Lab 05 — DC Locator and DNS Misconfiguration
 
-## Overview
+## Objective
 
-This lab demonstrates how **Active Directory clients discover Domain Controllers** using DNS SRV records and how domain connectivity breaks when clients use an **external DNS server instead of the Active Directory DNS server**.
+This lab demonstrates how Active Directory clients locate domain controllers using **DNS SRV records** and how authentication fails when a workstation is configured with an **external DNS server instead of the domain DNS server**.
 
-The lab also explores how the **DC Locator process works** and how DNS misconfiguration affects domain authentication.
+Active Directory relies heavily on DNS to locate authentication services. Domain clients query SRV records such as:
+
+
+_ldap._tcp.dc._msdcs.corp.local
+
+
+These records identify which servers provide LDAP and Kerberos authentication services. :contentReference[oaicite:0]{index=0}
 
 ---
 
@@ -12,42 +18,44 @@ The lab also explores how the **DC Locator process works** and how DNS misconfig
 
 | System | Role |
 |------|------|
-| DC01 | Domain Controller + DNS |
-| DC02 | Domain Controller + DNS |
-| FS01 | Tier 1 Server |
+| DC01 | Domain Controller |
+| DC02 | Domain Controller |
 | CL01 | Domain Client |
-| PAWs | Privileged Access Workstation |
 
-Domain: corp.local
+Domain:
 
 
----
-
-# Step 1 – Verify SRV Records in Active Directory DNS
-
-Domain Controllers automatically register service records in DNS when the **Netlogon service starts**.
-
-These records allow domain clients to locate authentication services.
-
-Open **DNS Manager** and navigate to:
-
-    _msdcs.corp.local
-    └── dc
-    └── _tcp
-
-You should see LDAP SRV records pointing to the domain controllers.
-
-![DNS SRV Records](../screenshots/lab05/lab05_dns_srv_records.png)
-
-These records tell clients: Which servers provide LDAP directory services
-                            Which servers provide Kerberos authentication
+corp.local
 
 
 ---
 
-# Step 2 – Query SRV Records from the Client
+# Step 1 — Verify SRV Records in DNS
 
-On **CL01**, query the SRV records used by the DC Locator process.
+Open **DNS Manager** on a Domain Controller.
+
+Navigate to:
+
+
+Forward Lookup Zones
+└ corp.local
+└ _msdcs
+└ dc
+└ _tcp
+
+
+You should see SRV records for your domain controllers.
+
+![DNS SRV Records](../screenshots/lab05_dns_srv_records.png)
+
+These SRV records tell domain clients which servers provide LDAP directory services.
+
+---
+
+# Step 2 — Query SRV Records from a Client
+
+From **CL01**, run:
+
 
 nslookup
 set type=SRV
@@ -56,128 +64,192 @@ _ldap._tcp.dc._msdcs.corp.local
 
 Example output:
 
-![SRV Query](../screenshots/lab05/lab05_srv_query.png)
+![SRV Lookup](../screenshots/lab05_srv_lookup.png)
 
-Results show both domain controllers: dc01.corp.local
-                                      dc02.corp.local
-These SRV records are what clients use to locate domain controllers.
+This confirms DNS knows about both domain controllers.
+
+Example:
+
+
+dc02.corp.local
+dc01.corp.local
+
 
 ---
 
-# Step 3 – Run DC Locator
+# Step 3 — Run the DC Locator Command
 
-Run the DC Locator command:
+Run the DC locator command on the client.
 
-```powershell
+
 nltest /dsgetdc:corp.local
+
 
 Example output:
 
-Important fields:
+![DC Locator Success](../screenshots/lab05_dc_locator_success.png)
 
-Field	        Meaning
-DC   	        Domain Controller selected
-Address	IP      address of the DC
-Dom Name	    Active Directory domain
-Forest Name	    Forest root domain
-Flags	        Services provided by the DC
+Example result:
 
-Example:
 
-DC: \\DC02.corp.local
-Address: \\192.168.1.12
+DC: \DC02.corp.local
+Address: \192.168.1.12
 
-This shows the client selected DC02 as the domain controller.
 
-___
+This shows the client successfully located a domain controller.
 
-# Step 4 – Verify Client DNS Configuration
+---
 
-Check which DNS servers the client is using:
+# Step 4 — Verify Client DNS Configuration
+
+Check the DNS servers configured on the client.
+
 
 ipconfig /all
 
+
 Example:
 
-The client should be using Active Directory DNS servers:
+![Client DNS Servers](../screenshots/lab05_client_dns.png)
+
+The client is correctly using the domain DNS servers:
+
 
 192.168.1.12
 192.168.1.11
 
-These correspond to:DC02
-                    DC01
 
-___
+These correspond to:
 
-# Step 5 – Break DNS Resolution
 
-Now simulate a common misconfiguration by changing the client DNS server to a public DNS server.
+DC02
+DC01
+
+
+---
+
+# Step 5 — Simulate DNS Misconfiguration
+
+Now simulate a common real-world issue:  
+A workstation configured with **public DNS** instead of the domain DNS server.
+
+Run:
+
 
 Set-DnsClientServerAddress -ServerAddresses ("8.8.8.8")
 
-This simulates a workstation incorrectly configured to use Google DNS.
 
-___
+![Change DNS Server](../screenshots/lab05_change_dns.png)
 
-# Step 6 – Force DC Discovery
+The client is now using Google DNS.
 
-Run the DC Locator command again, forcing a new lookup:
+---
+
+# Step 6 — Force Domain Controller Discovery
+
+Run:
+
 
 nltest /dsgetdc:corp.local /force
 
-Result:
 
-Output: Getting DC name failed: Status = 1355
+Example result:
+
+![DC Locator Failure](../screenshots/lab05_dc_locator_failure.png)
+
+Output:
+
+
+Getting DC name failed: Status = 1355
 ERROR_NO_SUCH_DOMAIN
 
-This occurs because the client is now querying Google DNS, which does not host internal Active Directory zones.
 
-___
+This happens because Google DNS does not contain Active Directory records.
 
-# Step 7 – Verify SRV Lookup Failure
+---
 
-Run the SRV lookup again:
+# Step 7 — Verify SRV Lookup Failure
+
+Run the SRV lookup again.
+
 
 nslookup
 set type=SRV
 _ldap._tcp.dc._msdcs.corp.local
 
-Result:
 
-Output:dns.google can't find _ldap._tcp.dc._msdcs.corp.local: Non-existent domain
+Example result:
 
-This confirms that external DNS servers do not contain Active Directory service records.
+![SRV Lookup Failure](../screenshots/lab05_srv_lookup_failure.png)
+
+Output:
+
+
+dns.google can't find _ldap._tcp.dc._msdcs.corp.local
+Non-existent domain
+
+
+The external DNS server does not contain internal Active Directory records.
+
+---
 
 # Root Cause
-Active Directory depends heavily on DNS SRV records.
-Domain clients locate authentication services by querying: _ldap._tcp.dc._msdcs.corp.local
 
-Public DNS servers such as: 8.8.8.8
+Active Directory relies on DNS SRV records to locate authentication services.
 
-**do not contain these records.**
+Clients query records such as:
+
+
+_ldap._tcp.dc._msdcs.<domain>
+
+
+These records identify domain controllers that provide LDAP and Kerberos services. :contentReference[oaicite:1]{index=1}
+
+Public DNS servers do not host internal Active Directory zones.
+
+---
 
 # Resolution
 
-Configure domain clients to use Active Directory DNS servers.
+Configure domain clients to use the domain DNS servers.
 
-Example:192.168.1.11 (DC01)
-            192.168.1.12 (DC02)
+Example:
 
-After correcting DNS: ipconfig /flushdns
-                      nltest /dsgetdc:corp.local
+
+192.168.1.11
+192.168.1.12
+
+
+After fixing DNS:
+
+
+ipconfig /flushdns
+nltest /dsgetdc:corp.local
+
 
 Domain controller discovery should succeed again.
 
-# Key Concepts Learned
+---
 
-This lab demonstrates:
-Active Directory DNS dependency
-SRV record usage
-DC Locator process
-DNS misconfiguration troubleshooting
-Domain controller discovery
+# Key Takeaways
+
+Active Directory depends heavily on DNS.
+
+Incorrect DNS configuration can cause:
+
+- Authentication failures
+- Group Policy issues
+- Kerberos failures
+- Slow logons
+- Domain controller discovery failures
+
+Correct DNS configuration is critical for Active Directory environments.
+
+---
 
 # Useful Commands
+
+
 ipconfig /all
 ipconfig /flushdns
 nltest /dsgetdc:corp.local
@@ -186,3 +258,6 @@ nslookup
 set type=SRV
 _ldap._tcp.dc._msdcs.corp.local
 Set-DnsClientServerAddress -ServerAddresses ("8.8.8.8")
+
+
+---
