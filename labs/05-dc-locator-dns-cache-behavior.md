@@ -46,7 +46,7 @@ Forward Lookup Zones
 
 You should see SRV records for your domain controllers.
 
-![DNS SRV Records](../screenshots/lab05_dns_srv_records.png)
+![DNS SRV Records](../screenshots/lab05/lab05_dns_srv_records.png)
 
 These SRV records tell domain clients which servers provide LDAP directory services.
 
@@ -64,7 +64,7 @@ _ldap._tcp.dc._msdcs.corp.local
 
 Example output:
 
-![SRV Lookup](../screenshots/lab05_srv_lookup.png)
+![SRV Lookup](../screenshots/lab05/lab05_srv_lookup.png)
 
 This confirms DNS knows about both domain controllers.
 
@@ -87,7 +87,7 @@ nltest /dsgetdc:corp.local
 
 Example output:
 
-![DC Locator Success](../screenshots/lab05_dc_locator_success.png)
+![DC Locator Success](../screenshots/lab05/lab05_dc_locator_success.png)
 
 Example result:
 
@@ -110,7 +110,7 @@ ipconfig /all
 
 Example:
 
-![Client DNS Servers](../screenshots/lab05_client_dns.png)
+![Client DNS Servers](../screenshots/lab05/lab05_client_dns.png)
 
 The client is correctly using the domain DNS servers:
 
@@ -139,7 +139,7 @@ Run:
 Set-DnsClientServerAddress -ServerAddresses ("8.8.8.8")
 
 
-![Change DNS Server](../screenshots/lab05_change_dns.png)
+![Change DNS Server](../screenshots/lab05/lab05_change_dns.png)
 
 The client is now using Google DNS.
 
@@ -155,7 +155,7 @@ nltest /dsgetdc:corp.local /force
 
 Example result:
 
-![DC Locator Failure](../screenshots/lab05_dc_locator_failure.png)
+![DC Locator Failure](../screenshots/lab05/lab05_dc_locator_failure.png)
 
 Output:
 
@@ -180,7 +180,7 @@ _ldap._tcp.dc._msdcs.corp.local
 
 Example result:
 
-![SRV Lookup Failure](../screenshots/lab05_srv_lookup_failure.png)
+![SRV Lookup Failure](../screenshots/lab05/lab05_srv_lookup_failure.png)
 
 Output:
 
