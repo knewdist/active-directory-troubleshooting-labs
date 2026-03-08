@@ -38,10 +38,10 @@ Navigate to:
 
 
 Forward Lookup Zones
-└ corp.local
-└ _msdcs
-└ dc
-└ _tcp
+/ corp.local
+/ _msdcs
+/ dc
+/ _tcp
 
 
 You should see SRV records for your domain controllers.
@@ -64,7 +64,7 @@ _ldap._tcp.dc._msdcs.corp.local
 
 Example output:
 
-![SRV Lookup](../screenshots/lab05/lab05_srv_lookup.png)
+![SRV Lookup](../screenshots/lab05/lab05_srv_query.png)
 
 This confirms DNS knows about both domain controllers.
 
